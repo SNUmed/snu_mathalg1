@@ -46,6 +46,13 @@ vector<unsigned long> substract(vector<unsigned long> v1, vector<unsigned long>v
     return v_result;
 }
 
+vector<unsigned long> multiplication(vector<unsigned long> v1, vector<unsigned long> v2){
+
+        cout << v2[0] << v1[0];
+
+        return v1;
+}
+
 int main(){
 
     const int order = 10;

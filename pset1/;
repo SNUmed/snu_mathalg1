@@ -1,0 +1,56 @@
+#include <iostream>
+#include <vector>
+#include <bitset>
+
+using namespace std;
+
+int compare(vector<unsigned long> v1, vector<unsigned long> v2){
+
+    int order = v1.size();
+
+    for(int i=0; i<order; i++){
+        int diff = v1[order] - v2[order];
+        if(diff < 0){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int substract(vector<unsigned long> v1, vector<unsigned long>v2){
+
+    int order = v1.size();
+    int big = compare(v1, v2);
+    if(big == 0){
+        vector<unsigned long> v;
+        v = v1;
+        v1 = v2;
+        v2 = v;
+    }
+
+    vector<unsigned long> v_result(order, 0);
+    vector<int> v_sign;
+    for(int i=0; i<order; i++){
+        int diff = v1[order-(i+1)] - v2[order-(i+1)];
+        if (diff < 0){
+//그 앞자리에서 1을 당겨온다
+        }
+        else{
+            v_result[order-(i+1)] = diff;
+        }
+
+    }
+
+    
+    return 0;
+}
+
+int main(){
+
+    const int order = 10;
+    vector<unsigned long> v1(order), v2(order), v_result(order);
+
+
+    
+    return 0;
+}

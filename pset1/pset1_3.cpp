@@ -22,7 +22,7 @@ int main(){
         bitset<64> int_max(1);
         int_max = int_max << 63;
 
-        if (v1[i] > (int_max.to_ulong() - v2[i])){
+        if(v1[i] > (int_max.to_ulong() - v2[i])){
             v_result[i+1] += 1;
         }
     }
