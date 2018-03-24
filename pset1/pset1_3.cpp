@@ -19,15 +19,12 @@ int main(){
 
     for(int i=0; i<order; i++){
         v_result[i] += v1[i] + v2[i];
-        bitset<64> bitset1(v_result[i]);
-        bitset<64> bitset2 = bitset1 << 1;
-        bitset2 = bitset2 >> 1;
+        bitset<64> int_max(1);
+        int_max = int_max << 63;
 
-        if (bitset2 != bitset1){
+        if (v1[i] > (int_max.to_ulong() - v2[i])){
             v_result[i+1] += 1;
         }
-        v_result[i] = bitset2.to_ulong();
-
     }
 
     for(int i=0; i<order+1; i++){
