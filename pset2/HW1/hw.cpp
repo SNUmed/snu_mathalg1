@@ -56,6 +56,33 @@ vector<int> multiplication(vector<int> v1, vector<int> v2){
     return v;
 }
 
+vector<int> KA1(vector<int> v1, vector<int> v2){
+
+    int N = max(v1.size(), v2.size());
+    vector<int> v_result(2*N-1, 0);
+
+    if(N <= 64){
+        return multiplication(v1,v2); 
+    }
+
+    const vector<int> v12(v1.begin(), v1.begin()+N/2);
+    const vector<int> v22(v2.begin(), v2.begin()+N/2);
+    const vector<int> v11(v1.begin()+N/2, v1.begin()+N);
+    const vector<int> v21(v2.begin()+N/2, v2.begin()+N);
+    
+    const vector<int> &D0 = KA1(v12, v22);
+    const vector<int> &D1 = KA1(v11, v21);
+    const vector<int> &D01 = KA1(v11+v12, v21+v22);
+
+    for(int i=0; i<N-1; i++){
+        v_result[i] += D0[i];
+        v_result[i+N] += D1[i];
+        v_result[i+(N/2)] += D01[i] - D0[i] - D1[i]; 
+    }
+
+    return v_result;    
+}
+
 vector<int> KA(vector<int> v1, vector<int> v2){
 
     int N = max(v1.size(), v2.size());
@@ -101,7 +128,7 @@ int main(){
     t2.stop();
 
     t1.start();
-    vector<int> v = KA(v1, v2);
+    vector<int> v = KA1(v1, v2);
     t1.stop();
 
     /*for(int i=0; i<2*n-1; i++){
