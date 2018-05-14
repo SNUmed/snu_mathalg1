@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <gmpxx.h>
 
 using namespace std;
 
@@ -7,11 +8,11 @@ class monomial{
     private:
         vector<int> pw;
         int special;
-        int coef;
+        mpq_class coef;
         monomial *next_mono;
 
     public:
-        monomial(int _coef, int pw_x, int pw_y, int pw_z, int _special){
+        monomial(mpq_class _coef, int pw_x, int pw_y, int pw_z, int _special){
             pw.resize(3);
             coef = _coef;
             pw[0] = pw_x;
@@ -23,16 +24,16 @@ class monomial{
         void set_pw(int pw_x, int pw_y, int pw_z);
         void set_special(int _spec);
         void set_ptr(monomial* _next_mono);
-        void set_coef(int _coef);
+        void set_coef(mpq_class _coef);
         int get_special();
         monomial* get_next_mono();
         void start_show();
         void cont_show();
         vector<int> get_pw();
-        int get_coef();
+        mpq_class get_coef();
 };
 
-int monomial::get_coef(){
+mpq_class monomial::get_coef(){
     return coef;
 }
 
@@ -55,7 +56,7 @@ void monomial::set_ptr(monomial* _next_mono){
     next_mono = _next_mono;
 }
 
-void monomial::set_coef(int _coef){
+void monomial::set_coef(mpq_class _coef){
     coef = _coef; 
 }
 
@@ -73,17 +74,21 @@ void monomial::start_show(){
 
 void monomial::cont_show(){
     if(special == 1){
-        cout << coef 
-        << "x^" << pw[0]
-        << "y^" << pw[1]
-        << "z^" << pw[2];
-        if((next_mono -> get_special()) == 1){
+        if(coef > 0){
             cout << "+";
         }
+        cout << coef; 
+        if(pw[0] != 0){
+            cout << "x^" << pw[0];
+        }
+        if(pw[1] != 0){
+            cout << "y^" << pw[1];
+        }
+        if(pw[2] != 0){
+            cout << "z^" << pw[2];
+        }
         next_mono -> cont_show();
-    } else {
-        cout << endl << "finished";
-    }
+    } 
 }
 
 int big_pw(monomial* mono_1, monomial* mono_2){
@@ -91,7 +96,7 @@ int big_pw(monomial* mono_1, monomial* mono_2){
     vector<int> pw_2 = mono_2 -> get_pw();
 
 
-    // if pw of two monomial are same
+    // if pw of two monomial are the same
     if(pw_1 == pw_2){
         return 1;
     }
@@ -112,3 +117,35 @@ int big_pw(monomial* mono_1, monomial* mono_2){
     // not above two, mono_2 has larger pw
     return 2;
 }
+
+int can_div(monomial* mono_1, monomial* mono_2){
+    vector<int> pw_1 = mono_1 -> get_pw();
+    vector<int> pw_2 = mono_2 -> get_pw();
+
+    if(pw_1[0] >= pw_2[0]){
+        if(pw_1[1] >= pw_2[1]){
+            if(pw_1[2] >= pw_2[2]){
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+vector<int> pw_diff(monomial* mono_1, monomial* mono_2){
+    vector<int> pw_1 = mono_1 -> get_pw();
+    vector<int> pw_2 = mono_2 -> get_pw();
+    vector<int> contrast;
+    contrast.resize(3);
+
+    for(int i=0; i<3; i++){
+        contrast[i] = pw_1[i] - pw_2[i];
+    }
+
+    return contrast;
+}
+
+
+
+
