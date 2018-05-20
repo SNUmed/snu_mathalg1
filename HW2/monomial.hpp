@@ -95,13 +95,18 @@ int big_pw(monomial* mono_1, monomial* mono_2){
     vector<int> pw_1 = mono_1 -> get_pw();
     vector<int> pw_2 = mono_2 -> get_pw();
 
+    /*for(int i=0; i<3; i++){
+        cout<<pw_1[i] << "," << pw_2[i]<<endl;
+    }
 
+    
     // if pw of two monomial are the same
     if(pw_1 == pw_2){
         return 1;
     }
     
     // check whether mono_1 has larger pw
+    
     if(pw_1[0] > pw_2[0]){
         return 0;
     } else {
@@ -112,10 +117,20 @@ int big_pw(monomial* mono_1, monomial* mono_2){
                 return 0;
             }
         }
+    } */
+
+    for(int i=0; i<3; i++){
+        if(pw_1[i] > pw_2[i]){
+            return 0;
+        } else if(pw_1[i] < pw_2[i]){
+            return 2;
+        }
     }
-    
+
+    return 1;
+
     // not above two, mono_2 has larger pw
-    return 2;
+    //return 2;
 }
 
 int can_div(monomial* mono_1, monomial* mono_2){
