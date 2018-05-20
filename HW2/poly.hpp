@@ -46,6 +46,7 @@ class poly{
         poly operator*(poly _poly);
         poly operator-(poly _poly);
         bool operator<(const poly& _poly) const;
+        bool operator==(const poly& _poly) const;
 };
 
 
@@ -350,6 +351,33 @@ bool poly::operator<(const poly& _poly) const{
     }
 }
 
+bool poly::operator==(const poly& _poly) const{
+    bool result = true;
+
+    monomial *p = this -> get_zero_node();
+    monomial *q = _poly.get_zero_node();
+
+    p = p -> get_next_mono();
+    q = q -> get_next_mono();
+
+    while((p -> get_special()) > 0){
+        int larger = big_pw(p,q);
+        mpq_class coef_p, coef_q;
+        coef_p = p -> get_coef();
+        coef_q = q -> get_coef();
+
+        if((larger == 1) and (coef_p == coef_q)){
+            p = p -> get_next_mono();
+            q = q -> get_next_mono();
+        } else {
+            result = false;   
+            return result;
+        }
+    }
+
+    return result;
+}
+
 bool poly_empty(poly *_poly){
     bool result = false; 
     monomial* p = _poly -> get_zero_node();
@@ -364,27 +392,3 @@ bool poly_empty(poly *_poly){
 
     return result;
 }
-
-
-/*int main(){
-    // a = xy^2
-    poly a(1, 1, 2, 0);
-
-    // b = y^2 - y
-    poly b(1, 0, 2, 0);
-    poly* c = new poly(-1, 0, 1, 0);
-    b = poly_add(&b, c);
-    delete c;
-
-    a.show();
-    cout << endl;
-    b.show();
-    cout << endl;
-
-    // s_poly of a and b
-    poly d = s_poly(&a, &b);
-    d.show();
-    cout << endl;
-
-    return 0;
-}*/

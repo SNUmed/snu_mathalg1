@@ -1,7 +1,7 @@
 #include "poly.hpp"
 #include <set>
 
-set<poly> buchberger(set<poly>* _pre_basis){
+set<poly> buchberger_fat(set<poly>* _pre_basis){
     set<poly> basis = *_pre_basis;
     vector<poly> pair;
     pair.resize(2);
@@ -39,36 +39,68 @@ set<poly> buchberger(set<poly>* _pre_basis){
     return basis;    
 }
 
+set<poly> buchberger_red(set<poly>* _fat_basis){
+    set<poly> basis;
+    set<poly>::iterator it_row, it_col;
+    poly fat_element, div_element;
+    
+    for(it_row = _fat_basis -> begin(); it_row!= _fat_basis -> end(); ++it_row){
+        fat_element = *it_row; 
+        for(it_col = _fat_basis -> begin(); it_col != it_row; ++it_col){
+            div_element = *it_col;
+            fat_element = poly_rem(&fat_element, &div_element);
+
+        }
+        basis.insert(fat_element);
+    }
+    
+    return basis;
+}
+
+
 int main(){
+    
+    // due to some unknown reason, comparison between set<poly> is not working.
+    // although I defined operator == in the polynomial properly(it seems to work well when testing for quite a lot of examples)
+    // so performing "while" until the basis and the reduced basis are equal is not working.
+    // therefore, as an incomplete solution, increase n untill the program end up to a reduced basis 
+    int n = 10;
+
     set<poly> pre_basis;
     set<poly>::iterator b_it;
-    pre_basis.insert(poly(1,2,0,0) + poly(1,0,2,0) + poly(1,0,0,2) + poly(-1,0,0,0));
-    pre_basis.insert(poly(1,3,0,0) + poly(1,2,0,0) + poly(-1,0,2,0) + poly(-1,0,0,2));
+//    pre_basis.insert(poly(1,2,0,0) + poly(1,0,2,0) + poly(1,0,0,2) + poly(-1,0,0,0));
+//    pre_basis.insert(poly(1,3,0,0) + poly(1,2,0,0) + poly(-1,0,2,0) + poly(-1,0,0,2));
 //    pre_basis.insert(poly(1,2,1,0) + poly(-2,0,0,0));
- //   pre_basis.insert(poly(1,1,2,0) + poly(-1,0,1,0));
+//    pre_basis.insert(poly(1,1,2,0) + poly(-1,0,1,0));
 
-//    for(b_it = pre_basis.begin(); b_it != pre_basis.end(); ++b_it){
-//        (*b_it).show();
-//        cout << endl;
-//    }
+    pre_basis.insert(poly(1,2,0,0) + poly(-1, 0,1,0));
+    pre_basis.insert(poly(1,3,0,0) + poly(-1, 1,0,0));
 
-    set<poly> basis = buchberger(&pre_basis);
+    set<poly> basis = buchberger_fat(&pre_basis);
     for(b_it = basis.begin(); b_it != basis.end(); ++b_it){
         (*b_it).show();
         cout << endl;
     }
     
+    cout << "---------------" << endl;
+    set<poly> basis_red = buchberger_red(&basis);
+    for(b_it = basis_red.begin(); b_it != basis_red.end(); ++b_it){
+        (*b_it).show();
+        cout << endl;
+    }
     
+    basis = basis_red;
+    for(int i=0; i<n; i++){
+        cout << "---------------" << endl;
+        basis = basis_red;
+        basis_red = buchberger_red(&basis);
 
-    /*poly a = poly(1,2,0,0) + poly(1,0,2,0) + poly(1,0,0,2) + poly(-1,0,0,0);
-    poly b = poly(1,3,0,0) + poly(1,2,0,0) + poly(-1,0,2,0) + poly(-1,0,0,2); */
-    
-    /*poly a = poly(1,2,1,0) + poly(-2,0,0,0);
-    poly b = poly(1,1,2,0) + poly(-1,0,1,0);
-    
-    cout << "---------------------" << endl;
-
-    cout << (b<a) << endl; */
+        //print reduced basis
+        for(b_it = basis_red.begin(); b_it != basis_red.end(); ++b_it){
+            (*b_it).show();
+            cout << endl;
+        }
+    }
 
     return 0;
 }
