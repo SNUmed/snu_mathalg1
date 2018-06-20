@@ -20,23 +20,16 @@ const int y=2;
 
 class node{
     public:
-        int type;
-        int char_type; // char_type stores x or y 
-        int info; // info stores power
-        int coef; // store coef
-        node *left;
-        node *right;    
+        int type = 0;
+        int char_type = 0; // char_type stores x or y 
+        int info = 0; // info stores power
+        int coef = 0; // store coef
+        node *left = NULL;
+        node *right = NULL;    
 
 
-        // root node init
-        node(){
-            left=NULL;
-            right=NULL;
-            info=0;
-            type=0;
-            char_type=0;
-            coef=0;
-        }
+        // root/empty node init
+        node(){}
             
         // const node init
         node(int _type, int _coef){
@@ -51,10 +44,15 @@ class node{
 
         // var node init
         node(int _type, int _coef, int _char_type, int _info){
-            type = _type;
-            coef = _coef;
-            char_type = _char_type;
-            info = _info;
+            if(_coef == 0){
+                node();
+            }
+            else{
+                type = _type;
+                coef = _coef;
+                char_type = _char_type;
+                info = _info;
+            }
         }
 
         // operation node init
@@ -62,16 +60,55 @@ class node{
             type = _type;
             left = lhs;
             right = rhs;
+            coef = -1;
         }
         
         // delete node
         ~node(){
+            cout << "node destructed" << endl;
             if(left != NULL){
                 delete left;
             }
             if(right != NULL){
                 delete right;
             }
+        }
+       
+        // copy function 
+        static node* copy(const node& _node){
+            node *result = new node();
+            *result = _node;
+            if(_node.left != NULL){
+                result -> left = copy(*(_node.left));
+            }
+            if(_node.right != NULL){
+                result -> right = copy(*(_node.right));
+            }
+            return result;
+        }
+        
+        // add, mult, sub, div operators
+        node operator+(const node& _node){
+            node result = node(AddNode, copy(*this), copy(_node));
+            return result;
+        }
+
+        node operator*(const node& _node){
+            node result = node(MultNode, copy(*this), copy(_node));
+            if((this -> coef) * (_node.coef) == 0){
+                result = node();
+            }
+            return result;
+        }
+        
+        node operator-(const node& _node){
+            node result = node(SubNode, copy(*this), copy(_node));
+            return result;
+        }
+
+        node operator/(const node& _node){
+            node result = node(DivNode, copy(*this), copy(_node));
+            return result;
         }
         
         // print node
@@ -115,66 +152,32 @@ class node{
         }
 };
 
-// 지금 copy가 모든 정보를 카피하지 않음
-node* copy(node* ptrNode){
-    node *result = new node;
-    *result = *ptrNode; 
-    result -> info = ptrNode -> info;
-    if(ptrNode -> left != NULL){
-        result -> left = copy(ptrNode -> left);
-    }
-    if(ptrNode -> right != NULL){
-        result -> right = copy(ptrNode -> right);
-    }
-    return result;
-}
-
-node* add(node* lhs, node* rhs){
-    node* result = new node(AddNode, copy(lhs), copy(rhs));
-    return result;
-}
-
-node* mult(node* lhs, node* rhs){
-    node* result = new node(MultNode, copy(lhs), copy(rhs));
-    return result;
-}
-
-node* div(node* lhs, node* rhs){
-    node* result = new node(DivNode, copy(lhs), copy(rhs));
-    return result;
-}
-
-node* sub(node* lhs, node* rhs){
-    node* result = new node(SubNode, copy(lhs), copy(rhs));
-    return result;
-}
-
-double eval(node* _node, double x_val, double y_val){
+double eval(const node& _node, double x_val, double y_val){
     double result; 
     // const val if const node
-    if(_node -> type == ConstNode){
-        result = _node -> coef;
+    if(_node.type == ConstNode){
+        result = _node.coef;
     } // eval x or y if var node
-    else if(_node -> type == VarNode){
-        if(_node -> char_type == x){
-            result = (_node -> coef) * pow(x_val, _node -> info);
+    else if(_node.type == VarNode){
+        if(_node.char_type == x){
+            result = (_node.coef) * pow(x_val,_node.info);
         }
         else{ // not x than it must be y (may cause error?)
-            result = (_node -> coef) * pow(y_val, _node -> info);
+            result = (_node.coef) * pow(y_val,_node.info);
         } 
     } // operation nodes compute recursively 
     else{
-        if(_node -> type == AddNode){
-                result = eval(_node -> left, x_val, y_val) + eval(_node -> right, x_val, y_val);
+        if(_node.type == AddNode){
+                result = eval(*(_node.left), x_val, y_val) + eval(*(_node.right), x_val, y_val);
         }
-        else if(_node -> type == MultNode){
-            result = eval(_node -> left, x_val, y_val) * eval(_node -> right, x_val, y_val);
+        else if(_node.type == MultNode){
+            result = eval(*(_node.left), x_val, y_val) * eval(*(_node.right), x_val, y_val);
         }
-        else if(_node -> type == DivNode){
-            result = eval(_node -> left, x_val, y_val) / eval(_node -> right, x_val, y_val);
+        else if(_node.type == DivNode){
+            result = eval(*(_node.left), x_val, y_val) / eval(*(_node.right), x_val, y_val);
         }
-        else if(_node -> type == SubNode){
-            result = eval(_node -> left, x_val, y_val) - eval(_node -> right, x_val, y_val);
+        else if(_node.type == SubNode){
+            result = eval(*(_node.left), x_val, y_val) - eval(*(_node.right), x_val, y_val);
         }
         else{ // not const, var, oper then just return 0
             result = 0;
@@ -184,7 +187,7 @@ double eval(node* _node, double x_val, double y_val){
     return result;
 }
 
-node* diff(node* ptrNode, int diff_var){
+/*node* diff(node* ptrNode, int diff_var){
     node *result = new node;
     if(ptrNode -> type == ConstNode){
         *result = node();
@@ -197,7 +200,7 @@ node* diff(node* ptrNode, int diff_var){
 
 
 
-    /*if(ptrNode -> type == AddNode){
+    if(ptrNode -> type == AddNode){
         result = add(diff((ptrNode -> left), diff_var), diff((ptrNode -> right), diff_var));
     }
     else if(ptrNode -> type == SubNode){
@@ -208,20 +211,17 @@ node* diff(node* ptrNode, int diff_var){
     }
     else if(ptrNode -> type == DivNode){
         result = mul(diff(ptrNode -> left))
-    }*/
+    }
     
     
     return result;
-}
+} */
 
-#define X {new node(VarNode, 1, x, 1)}
-#define Y {new node(VarNode, 1, y, 1)}
 
 int main(){
-    node *root;
-    root = mult(add(Y, mult(X,Y)), X);
-    cout << root -> print();
-    cout << endl;
-    cout << eval(root, 1, 2);
+    node X = node(VarNode, 1, x, 1);
+    node Y = node();
+    double z = eval(X*Y, 1, 1);
+    cout << z << endl ;
     return 0;
 }
