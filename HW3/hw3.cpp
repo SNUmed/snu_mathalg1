@@ -5,8 +5,9 @@ using namespace std;
 
 const int MaxOrder=260;
 
-const int VarNode=1000;
-const int ConstNode=1001;
+const int ZeroNode=0;
+const int ConstNode=1000;
+const int VarNode=1001;
 const int AddNode=1002;
 const int MultNode=1003;
 const int DivNode=1004;
@@ -20,7 +21,7 @@ const int y=2;
 
 class node{
     public:
-        int type = 0;
+        int type = ZeroNode;
         int char_type = 0; // char_type stores x or y 
         int info = 0; // info stores power
         int coef = 0; // store coef
@@ -64,15 +65,15 @@ class node{
         }
         
         // delete node
-        ~node(){
-            cout << "node destructed" << endl;
+        /*~node(){
+            // cout << "node destructed" << endl;
             if(left != NULL){
                 delete left;
             }
             if(right != NULL){
                 delete right;
             }
-        }
+        }*/
        
         // copy function 
         static node* copy(const node& _node){
@@ -90,6 +91,26 @@ class node{
         // add, mult, sub, div operators
         node operator+(const node& _node){
             node result = node(AddNode, copy(*this), copy(_node));
+            if((this -> coef) * (_node.coef) == 0){
+                if((this->coef) + (_node.coef) == 0){
+                    result = node();
+                }
+                else if((this->coef) != 0){
+                    result = *this;
+                }
+                else{
+                    result = _node;
+                }
+            }
+            if((this -> type) == (_node.type)){
+                if((this -> type) <= 1001){
+                    if((this -> char_type) == (_node.char_type)){
+                        if((this -> coef) + (_node.coef) == 0){
+                        result = node();
+                        }
+                    }
+                }
+            }
             return result;
         }
 
@@ -103,11 +124,34 @@ class node{
         
         node operator-(const node& _node){
             node result = node(SubNode, copy(*this), copy(_node));
+            if((this -> coef) * (_node.coef) == 0){
+                if((this->coef) + (_node.coef) == 0){
+                    result = node();
+                }
+                else if((this->coef) != 0){
+                    result = *this;
+                }
+                else{
+                    result = _node;
+                }
+            }
+            if((this -> type) == (_node.type)){
+                if((this -> type) <= 1001){
+                    if((this -> char_type) == (_node.char_type)){
+                        if((this -> coef) - (_node.coef) == 0){
+                        result = node();
+                        }
+                    }
+                }
+            }
             return result;
         }
 
         node operator/(const node& _node){
             node result = node(DivNode, copy(*this), copy(_node));
+            if((this -> coef) ==0){
+                result = node();
+            }
             return result;
         }
         
@@ -132,6 +176,11 @@ class node{
                     result += "(" + right -> print() + ")";
                     break;
 
+                case SubNode:
+                    result = "(" + left -> print() + ") - ";
+                    result += "(" + right -> print() + ")";
+                    break;
+
                 case MultNode:
                     result = "(" + left -> print() + ") * ";
                     result += "(" + right -> print() + ")";
@@ -140,11 +189,7 @@ class node{
                 case DivNode:
                     result = "(" + left -> print() + ") / ";
                     result += "(" + right -> print() + ")";
-
-                case SubNode:
-                    result = "(" + left -> print() + ") - ";
-                    result += "(" + right -> print() + ")";
-                
+                                
                 default:
                     break;
             }
@@ -168,16 +213,13 @@ double eval(const node& _node, double x_val, double y_val){
     } // operation nodes compute recursively 
     else{
         if(_node.type == AddNode){
-                result = eval(*(_node.left), x_val, y_val) + eval(*(_node.right), x_val, y_val);
+            result = eval(*(_node.left), x_val, y_val) + eval(*(_node.right), x_val, y_val);
         }
         else if(_node.type == MultNode){
             result = eval(*(_node.left), x_val, y_val) * eval(*(_node.right), x_val, y_val);
         }
         else if(_node.type == DivNode){
             result = eval(*(_node.left), x_val, y_val) / eval(*(_node.right), x_val, y_val);
-        }
-        else if(_node.type == SubNode){
-            result = eval(*(_node.left), x_val, y_val) - eval(*(_node.right), x_val, y_val);
         }
         else{ // not const, var, oper then just return 0
             result = 0;
@@ -187,41 +229,51 @@ double eval(const node& _node, double x_val, double y_val){
     return result;
 }
 
-/*node* diff(node* ptrNode, int diff_var){
-    node *result = new node;
-    if(ptrNode -> type == ConstNode){
-        *result = node();
+node diff(const node& _node, int var){
+    node result = node();
+    // constant to zero
+    if((_node.type == ConstNode) or (_node.type == ZeroNode)){
+        // do nothing return will be at the end
     }
-
-
-
-
-
-
-
-
-    if(ptrNode -> type == AddNode){
-        result = add(diff((ptrNode -> left), diff_var), diff((ptrNode -> right), diff_var));
+    else{
+        if(_node.type == VarNode){
+            // D on same variable
+            if(_node.char_type == var){
+                if(_node.info == 1){
+                    result = node(ConstNode, _node.coef);
+                }
+                else{
+                    result = node(VarNode, _node.info * _node.coef, _node.char_type, _node.info - 1);
+                }
+            }
+            return result;
+        }
+        else{
+            if(_node.type == AddNode){
+                result = diff(*(_node.left), var) + diff(*(_node.right), var);  
+            }
+            else if(_node.type == MultNode){
+                result = diff(*(_node.left), var) * (*(_node.right))
+                    + (*(_node.left)) * diff(*(_node.right), var);
+            }
+            else if(_node.type == SubNode){
+                result = diff(*(_node.left), var) - diff(*(_node.right), var);
+            }
+            else{
+                result = (diff(*(_node.left), var) * (*(_node.right))
+                    - (*(_node.left)) * diff(*(_node.right), var))
+                    / ((*(_node.right)) * (*(_node.right)));
+            }
+        }
     }
-    else if(ptrNode -> type == SubNode){
-        result  = sub(diff((ptrNode -> left), diff_var), diff((ptrNode -> right), diff_var));   
-    }
-    else if(ptrNode -> type == MultNode){
-        result = add(mult(diff(ptrNode -> left, diff_var), ptrNode -> right), mult(ptrNode -> left, diff(ptrNode -> right, diff_var)));
-    }
-    else if(ptrNode -> type == DivNode){
-        result = mul(diff(ptrNode -> left))
-    }
-    
-    
     return result;
-} */
-
+}
 
 int main(){
     node X = node(VarNode, 1, x, 1);
-    node Y = node();
-    double z = eval(X*Y, 1, 1);
-    cout << z << endl ;
+    node Y = node(VarNode, 1, y, 1);
+    node W = node();
+    node Z = diff(X-(X/X), x);
+    cout << Z.print() << endl;
     return 0;
 }
