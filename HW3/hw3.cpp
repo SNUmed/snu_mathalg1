@@ -1,5 +1,8 @@
 #include <iostream>
 #include <cmath>
+#include <chrono>
+#include <thread>
+#include <vector>
 
 using namespace std;
 
@@ -18,6 +21,34 @@ const int MonomialNode=1020;
 
 const int x=1;
 const int y=2;
+
+class Timer // Just for performance test
+{
+    // make things readable
+    using clk = std::chrono::steady_clock;
+
+    clk::time_point b; // begin
+    clk::time_point e; // end
+
+public:
+    void clear() { b = e = clk::now(); }
+    void start() { b = clk::now(); }
+    void stop() { e = clk::now(); }
+
+    friend std::ostream& operator<<(std::ostream& o, const Timer& timer)
+    {
+        return o << timer.secs();
+    }
+
+    // return time difference in seconds
+    double secs() const
+    {
+        if(e <= b)
+            return 0.0;
+        auto d = std::chrono::duration_cast<std::chrono::microseconds>(e - b);
+        return d.count() / 1000000.0;
+    }
+};
 
 class node{
     public:
@@ -221,6 +252,9 @@ double eval(const node& _node, double x_val, double y_val){
         else if(_node.type == DivNode){
             result = eval(*(_node.left), x_val, y_val) / eval(*(_node.right), x_val, y_val);
         }
+        else if(_node.type == SubNode){
+            result = eval(*(_node.left), x_val, y_val) - eval(*(_node.right), x_val, y_val);
+        }
         else{ // not const, var, oper then just return 0
             result = 0;
         }
@@ -269,11 +303,62 @@ node diff(const node& _node, int var){
     return result;
 }
 
+double rev(const node& _node, int var, double x_val, double y_val){
+    double result = 0;
+    // constant to zero
+    if((_node.type == ConstNode) or (_node.type == ZeroNode)){
+        // do nothing return will be at the end
+    }
+    else{
+        if(_node.type == VarNode){
+            result = eval(diff(_node, var), x_val, y_val); 
+            return result;
+        }
+        else{
+            if(_node.type == AddNode){
+                result = rev(*(_node.left), var, x_val, y_val) + rev(*(_node.right), var, x_val, y_val);  
+            }
+            else if(_node.type == MultNode){
+                result = rev(*(_node.left), var, x_val, y_val) * eval(*(_node.right), x_val, y_val)
+                    + eval(*(_node.left), x_val, y_val) * rev(*(_node.right), var, x_val, y_val);
+            }
+            else if(_node.type == SubNode){
+                result = rev(*(_node.left), var, x_val, y_val) - rev(*(_node.right), var, x_val, y_val);            
+            }
+            else{
+                result = (rev(*(_node.left), var, x_val, y_val) * eval(*(_node.right), x_val, y_val)
+                    - eval(*(_node.left), x_val, y_val) * rev(*(_node.right), var, x_val, y_val))
+                    / pow(eval(*(_node.right), x_val, y_val), 2);
+            }
+        }
+    }
+    return result;
+}
+
+vector<double> grad_rev(const node& _node, double x_val, double y_val){
+    vector<double> result;
+    result.resize(2);
+    result[0] = rev(_node, x, x_val, y_val);
+    result[1] = rev(_node, y, x_val, y_val);
+    return result;
+}
+
 int main(){
+    // X for x^1, Y for y^1
     node X = node(VarNode, 1, x, 1);
     node Y = node(VarNode, 1, y, 1);
-    node W = node();
-    node Z = diff(X-(X/X), x);
-    cout << Z.print() << endl;
-    return 0;
+    // symbolic derivative test
+    cout << diff(X*X+Y*Y, x).print() << endl;
+    // reverse AD
+    vector<double> vec = grad_rev((X*X+Y*Y), 1, 2);
+    cout << vec[0] << "," << vec[1] << endl;
+    // H = x^2+y^3-y^2, problem (4)
+    node H = (X*X) + (Y*Y*Y) - (Y*Y);
+    // roundH/roundx
+    cout << diff(H, x).print() << endl;
+    // roundH/roundy
+    cout << diff(H, y).print() << endl;
+    // reverse AD of H on (0,1)
+    vector<double> gradH = grad_rev(H, 0, 1);
+    cout << gradH[0] << ',' << gradH[1] << endl;
 }
