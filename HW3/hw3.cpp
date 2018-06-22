@@ -343,6 +343,52 @@ vector<double> grad_rev(const node& _node, double x_val, double y_val){
     return result;
 }
 
+class dual{
+    public:
+        double re, im;
+
+        dual(){}
+
+        dual(double _re){
+            re = _re;
+            im = 0;
+        }
+
+        dual(double _re, double _im){
+            re = _re;
+            im = _im;
+        }
+
+        // operator overload
+        dual operator+(const dual& _dual){
+            dual result;
+            result.re = _dual.re + re;
+            result.im = _dual.im + im;
+
+            return result;
+        }
+
+        dual operator*(const dual& _dual){
+            dual result;
+            result.re = _dual.re * re;
+            result.im = _dual.re *im + re * _dual.im;
+
+            return result;
+        }
+
+        // print method
+        string print(){
+            string result = "";
+            result += re;
+            result += ",";
+            result += im;
+
+            return result;
+        }
+};
+
+
+
 int main(){
     // X for x^1, Y for y^1
     node X = node(VarNode, 1, x, 1);
