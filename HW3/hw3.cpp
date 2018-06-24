@@ -22,6 +22,15 @@ const int MonomialNode=1020;
 const int x=1;
 const int y=2;
 
+int fact(int n){
+    if(n<=1){
+        return 1;
+    }
+    else{
+        return n*fact(n-1);
+    }
+}
+
 class Timer // Just for performance test
 {
     // make things readable
@@ -118,7 +127,7 @@ class node{
             }
             return result;
         }
-        
+
         // add, mult, sub, div operators
         node operator+(const node& _node){
             node result = node(AddNode, copy(*this), copy(_node));
@@ -345,51 +354,136 @@ vector<double> grad_rev(const node& _node, double x_val, double y_val){
 
 class dual{
     public:
-        double re, im;
+        vector<long double> vec;
 
         dual(){}
 
-        dual(double _re){
-            re = _re;
-            im = 0;
-        }
-
-        dual(double _re, double _im){
-            re = _re;
-            im = _im;
+        dual(vector<long double> _vec){
+            vec = _vec;
         }
 
         // operator overload
         dual operator+(const dual& _dual){
             dual result;
-            result.re = _dual.re + re;
-            result.im = _dual.im + im;
+            result.vec = vec;
+            int len = vec.size();
+            for(int i=0; i<len; i++){
+                result.vec[i] += _dual.vec[i];
+            }
 
             return result;
         }
 
         dual operator*(const dual& _dual){
             dual result;
-            result.re = _dual.re * re;
-            result.im = _dual.re *im + re * _dual.im;
+            int len = vec.size();
+            result.vec.resize(len, 0);
+            for(int i=0; i<len; i++){
+                for(int j=0; j<=i; j++){
+                    result.vec[i] += vec[i-j] * _dual.vec[j];
+                }
+            }
+            return result;
+        }
 
+        dual operator-(const dual& _dual){
+            dual result;
+            result.vec = vec;
+            int len = vec.size();
+            for(int i=0; i<len; i++){
+                result.vec[i] -= _dual.vec[i]; 
+            }
+
+            return result;
+        }        
+
+        dual operator/(const dual& _dual){
+            dual result;
+            result.vec = vec;
+            int len = vec.size();
+            result.vec[0] = result.vec[0] / _dual.vec[0];
+            for(int i=1; i<len; i++){
+                for(int j=1; j<=i; j++){
+                    result.vec[i] -= _dual.vec[j]*result.vec[i-j];
+                }
+                result.vec[i] = result.vec[i] / _dual.vec[0];
+            }
             return result;
         }
 
         // print method
         string print(){
-            string result = "";
-            result += re;
-            result += ",";
-            result += im;
+            //using iterator do printing
+            string result = "(";
+            vector<long double>::iterator it;
+            for(it = vec.begin(); it != vec.end(); ++it){
+                result += to_string(*it);
+                result += ",";
+            }
+            
+            result.pop_back();
+            result += ")";
 
             return result;
         }
 };
 
+// real mult
+dual rmult(long double c, const dual& _dual){
+    dual result;
+    int len = _dual.vec.size();
+    for(int i=0; i<len; i++){
+        result.vec[i] = _dual.vec[i] * c;
+    }
+    return result;
+}
+
+// pow
+dual pow(const dual& _dual, int n){
+    if(n == 1){
+        return _dual;
+    }
+    else{
+        return pow(_dual, n-1) * _dual;
+    }
+}
+
+dual fwd(const node& _node, dual _dual){
+    dual result;
+    // constant to zero
+    if((_node.type == ConstNode) or (_node.type == ZeroNode)){
+        result.vec = vector<long double>(_dual.vec.size(), 0); 
+        result.vec[0] = _node.coef;
+    }
+    else{
+        if(_node.type == VarNode){
+            result = pow(_dual, _node.info);
+        }
+        else{
+            if(_node.type == AddNode){
+                result = fwd(*(_node.left), _dual) + fwd(*(_node.right), _dual);
+            }
+            else if(_node.type == MultNode){
+                result = fwd(*(_node.left), _dual) * fwd(*(_node.right), _dual);
+            }
+            else if(_node.type == SubNode){
+                result = fwd(*(_node.left), _dual) - fwd(*(_node.right), _dual);
+            }
+            else{
+                result = fwd(*(_node.left), _dual) / fwd(*(_node.right), _dual);
+            }
+        }
+    }
+
+    // node type polynomial -> vec[i] = fact(order)/fact(order-i) * 적당히
+    
+    return result;
+}
+
 
 
 int main(){
+    /*
     // X for x^1, Y for y^1
     node X = node(VarNode, 1, x, 1);
     node Y = node(VarNode, 1, y, 1);
@@ -407,4 +501,12 @@ int main(){
     // reverse AD of H on (0,1)
     vector<double> gradH = grad_rev(H, 0, 1);
     cout << gradH[0] << ',' << gradH[1] << endl;
+    */
+    vector<long double> a(4), b(4);
+    a[0]=1; a[1]=0; a[2]=0; a[3]=0;
+    b[0]=1; b[1]=1; b[2]=0; a[3]=0;
+    dual da(a), db(b);
+    dual c = da / db;
+    cout << c.print() << endl;
+
 }
