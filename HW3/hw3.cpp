@@ -22,8 +22,11 @@ const int MonomialNode=1020;
 const int x=1;
 const int y=2;
 
-int fact(int n){
-    if(n<=1){
+double fact(int n){
+    if(n<0){
+        return 0;
+    }
+    else if(n==0){
         return 1;
     }
     else{
@@ -358,6 +361,10 @@ class dual{
 
         dual(){}
 
+        dual(int ord){
+            vec.resize(ord+1, 0);
+        }
+
         dual(vector<long double> _vec){
             vec = _vec;
         }
@@ -430,8 +437,8 @@ class dual{
 
 // real mult
 dual rmult(long double c, const dual& _dual){
-    dual result;
     int len = _dual.vec.size();
+    dual result(len-1);
     for(int i=0; i<len; i++){
         result.vec[i] = _dual.vec[i] * c;
     }
@@ -457,7 +464,15 @@ dual fwd(const node& _node, dual _dual){
     }
     else{
         if(_node.type == VarNode){
-            result = pow(_dual, _node.info);
+            result.vec = _dual.vec;
+            int len = result.vec.size();
+            int n = _node.info;
+            for(int i=1; i<n; i++){
+                result.vec[i] = fact(n)/(fact(i) * fact(n-i)) * pow(_dual.vec[0], n-i);
+            }
+            for(int i=n+1; i<len; i++){
+                result.vec[i] = 0;
+            }
         }
         else{
             if(_node.type == AddNode){
@@ -474,10 +489,48 @@ dual fwd(const node& _node, dual _dual){
             }
         }
     }
-
-    // node type polynomial -> vec[i] = fact(order)/fact(order-i) * 적당히
-    
     return result;
+}
+
+long double taylor(int ord, double step){
+
+    // initial value        
+    // x=0, y=1, t=0;
+    dual X(ord), Y(ord);
+    long double t=0, t_end=10;
+    X.vec[0] = 0; Y.vec[0] = 1;
+
+    // intermediate variables
+    dual u1(ord), u2(ord), u3(ord), 
+        u4(ord), u5(ord), u6(ord);
+
+    while(t<t_end){
+
+        // print x,y value of current step
+        cout << X.vec[0] << "," << Y.vec[0] << endl; 
+
+        for(int i=0; i<ord; i++){
+            // compute the jets
+            u1 = X; u2 = Y;
+            u3 = rmult(2, u2); u4 = rmult(3, u2*u2);
+            u5 = u3 - u4; u6 = rmult(2, u1);
+            
+            // update (n+1)-th normalized taylor coef
+            X.vec[i+1] = u5.vec[i] / (i+1);
+            Y.vec[i+1] = u6.vec[i] / (i+1);
+        }    
+        
+        // update x,y value of next step
+        for(int i=1; i<ord+1; i++){
+            X.vec[0] += X.vec[i] * pow(step, i);
+            Y.vec[0] += Y.vec[i] * pow(step, i);
+        }
+
+        // update time
+        t += step;
+    }
+
+    return X.vec[0];
 }
 
 
@@ -501,12 +554,16 @@ int main(){
     // reverse AD of H on (0,1)
     vector<double> gradH = grad_rev(H, 0, 1);
     cout << gradH[0] << ',' << gradH[1] << endl;
+    // define place to diff
+    dual a;
+    // up to 3rd derivative
+    a.vec.resize(4);
+    a.vec[0] = 0; a.vec[1] = 1; a.vec[2]=0; a.vec[3]=0;
+    // compute the jet
+    dual b = fwd(X*X*X, a); 
+    cout << a.print() << endl;
+    cout << b.print() << endl;
     */
-    vector<long double> a(4), b(4);
-    a[0]=1; a[1]=0; a[2]=0; a[3]=0;
-    b[0]=1; b[1]=1; b[2]=0; a[3]=0;
-    dual da(a), db(b);
-    dual c = da / db;
-    cout << c.print() << endl;
-
+    long double X = taylor(200, 0.25);
+    cout << X << endl;
 }
